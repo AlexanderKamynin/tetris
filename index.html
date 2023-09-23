@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="stylesheet" href="./src/style.css" />
+		<title>Tetris</title>
+	</head>
+  <body>
+    <!--<form action="index.html" method="get">
+      <label>
+        Введите имя:<br>
+        <input placeholder="Введите сюда имя"><br>
+      </label>
+      <input type="submit" value="input">
+    </form>-->
+    
+    <div id="main">
+      <div id="information">
+          <p>Игрок:</p>
+          <p>Счет: <span>0</span></p>
+
+          <p>Следующая фигура:</p>
+          <canvas id="figure_preview"></canvas>
+
+          <p>
+            Управление:<br>
+            Стрелка влево - перемещение фигуры влево<br>
+            Стрелка вправо - перемещение фигуры вправо<br>
+            Стрелка вниз - фигура заставить падать падла падай сука падай<br>
+            Стрелка вверх - поворот на 90 градусов по часовой стрелке<br>
+          </p>
+      </div>
+
+      <div id="playground_box">
+        <p>Тут стакан этот блин</p>
+        <canvas id="playground"></canvas>
+      </div>
+
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
