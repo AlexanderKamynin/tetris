@@ -1,91 +1,232 @@
-const WIDTH = 10;
-const HEIGHT = 20;
-const CELL_SIZE = 20; // размер клетки в px
+import { Field, Render } from "./render.js";
+
+const colors = {
+    'I': '#00ffff',
+    'O': '#faff00',
+    'T': '#9800ff',
+    'S': '#59f792',
+    'Z': '#fe3232',
+    'J': '#3266fe',
+    'L': '#fd8c00'
+};
+
+const tetrominos = {
+    'I': [
+        [0,0,0,0],
+        [1,1,1,1],
+        [0,0,0,0],
+        [0,0,0,0]
+    ],
+    'J': [
+        [1,0,0],
+        [1,1,1],
+        [0,0,0],
+    ],
+    'L': [
+        [0,0,1],
+        [1,1,1],
+        [0,0,0],
+    ],
+    'O': [
+        [1,1],
+        [1,1],
+    ],
+    'S': [
+        [0,1,1],
+        [1,1,0],
+        [0,0,0],
+    ],
+    'Z': [
+        [1,1,0],
+        [0,1,1],
+        [0,0,0],
+    ],
+    'T': [
+        [0,1,0],
+        [1,1,1],
+        [0,0,0],
+    ]
+};
 
 
-class Point {
-    constructor(x, y, fill=False, color="#5476f3"){
-        this.x = x;
-        this.y = y;
-        this.color = color;
-        this.fill = fill;
-    }
-}
-
-class Render {
-    /*
-    Отвечает за отображение клеток пользователю
-    */
-    constructor(canvas_id, rendered_obj, cell_size = CELL_SIZE){
-        this.canvas_elem = document.getElementById(canvas_id);
-        this.rendered_obj = rendered_obj;
-        this.cell_size = cell_size;
-        
-        // set canvas size
-        this.canvas_elem.width = this.canvas_width = this.rendered_obj.width * this.cell_size;
-        this.canvas_elem.height = this.canvas_height =  this.rendered_obj.height * this.cell_size;
-        this.canvas_elem.style.width = `${this.canvas_elem.width}px`;
-        this.canvas_elem.style.height = `${this.canvas_elem.height}px`;
-    }
-
-    render() {
-        if (this.canvas_elem.getContext){
-            let context = this.canvas_elem.getContext('2d');
-            //чистим то, что было нарисовано
-            context.clearRect(0, 0, this.canvas_width, this.canvas_height);
-
-            //рисуем
-            for (const row of this.rendered_obj.map){
-                for (const point of row){
-                    context.beginPath();
-                    
-                    let x = point.x * this.cell_size;
-                    let y = point.y * this.cell_size;
-
-                    context.strokeStyle = "#000000";
-                    context.lineWidth = 1
-                    context.strokeRect(x, y, this.cell_size, this.cell_size);
-
-                    context.fillStyle = point.color;
-                    context.fillRect(x, y, this.cell_size, this.cell_size);
-
-                    context.closePath();
-                }
-            }
-        }
-    }
-}
-
-
-class Map {
-    /*
-    Описывает состояние клеток на поле
-    */
-    constructor(width = WIDTH, height = HEIGHT) {
-        this.width = width;
-        this.height = height;
-        this.map = this.#create_map();
-    }
-
-    #create_map(){
-        let map = []
-        for (var i = 0; i < this.height; i++){
-            map[i] = []
-            for (var j = 0; j < this.width; j++){
-                map[i][j] = new Point(j,i);
-            }
-        }
-        return map;
-    }
-}
-
-
-
-
-let playground_map = new Map();
+let playground_map = new Field();
 let playground_renderer = new Render("playground", playground_map);
 playground_renderer.render();
 
-let figure_preview_map = new Map(4, 4);
+let figure_preview_map = new Field(4, 4);
 let figure_preview_renderer = new Render("figure_preview", figure_preview_map);
 figure_preview_renderer.render();
+
+
+let count = 0;
+let tetromino = 0; 
+let rAF = null;
+let game_over = false;
+
+class Engine {
+    constructor() {
+        this.status = 'Play';
+        this.score = 0;
+        this.tetromino_sequence = [];
+    }
+
+    get_seed(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    generate_sequence() {
+        const sequence =  ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+
+        while (sequence.length) {
+            const rand = this.get_seed(0, sequence.length - 1);
+            const name = sequence.splice(rand, 1)[0];
+            this.tetromino_sequence.push(name);
+        }
+    }
+
+    get_next_tetromino() {
+        // если следующей нет — генерируем
+        if (this.tetromino_sequence.length === 0) {
+            this.generate_sequence();
+        }
+
+        const name = this.tetromino_sequence.pop();
+
+        const matrix = tetrominos[name];
+    
+        // I и O стартуют с середины, остальные — чуть левее
+        const column = playground_map.width / 2 - Math.ceil(matrix[0].length / 2);
+    
+        // I начинает с 21 строки (смещение -1), а все остальные — со строки 22 (смещение -2)
+        const row = name === 'I' ? -1 : -2;
+    
+        // вот что возвращает функция 
+        return {
+        name: name,      // название фигуры (L, O, и т.д.)
+        matrix: matrix,  // матрица с фигурой
+        row: row,        // текущая строка (фигуры стартуют за видимой областью холста)
+        column: column         // текущий столбец
+        };
+    }
+
+    rotate(matrix) { 
+        const N = matrix.length - 1;
+        const result = matrix.map((row, i) => row.map((val, j) => matrix[N-j][i]));
+        return matrix;
+    }
+
+    check_move(matrix, cellRow, cellColumn) {
+        for (let row = 0; row < matrix.length; row++) {
+            for (let column = 0; column < matrix[row].length; column++){
+                if (matrix[row][column] && 
+                    (
+                        cellColumn + column < 0 ||
+                        cellColumn + column >= playground_map.width ||
+                        cellRow + row >= playground_map.height ||
+                        playground_map[cellRow + row][cellColumn + column].fill
+                    ) )
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    place_tetromino(tetromino) 
+    {
+        for (let row = 0; row < tetromino.matrix.length; row++)
+        {
+            for (let column = 0; column < tetromino.matrix[row].length; column++)
+            {
+                if (tetromino.matrix[row][column]){
+                    if (tetromino.row + row < 0){
+                        // gameOver
+                        return show_game_over();
+                    }
+                    // не вышли за границы поля - записываем в массив поля новую фигуру
+                    // TODO: тут типо записываем
+                }
+            }
+        }
+
+        //проверяем, что ряды очистились
+        for (let row = playground_map.length - 1; row >= 0; )
+        {
+            if (playground_map[row].every(point => !!point.fill))
+            {
+                for (let r = row; r >= 0; r--)
+                {
+                    for (let c = 0; c < playground_map.width; c++)
+                    {
+                        playground_map[r][c] = playground_map[r-1][c];
+                    }
+                }
+            }
+            else
+            {
+                row--;
+            }
+        }
+    }
+
+    show_game_over() {
+        cancelAnimationFrame(rAF);
+        game_over = true;
+          // рисуем чёрный прямоугольник посередине поля
+        context.fillStyle = 'black';
+        context.globalAlpha = 0.75;
+        context.fillRect(0, canvas.height / 2 - 30, canvas.width, 60);
+        // пишем надпись белым моноширинным шрифтом по центру
+        context.globalAlpha = 1;
+        context.fillStyle = 'white';
+        context.font = '36px monospace';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+    }
+
+    keyboard_handle(tetromino) {
+        document.addEventListener('keydown', function(event) {
+            if (game_over)
+            {
+                return;
+            }
+            
+            const key_name = event.key;
+            if (key_name === 'ArrowLeft' || key_name == 'ArrowRight')
+            {
+                const new_column = key_name == 'ArrowLeft' ? tetromino.column - 1 : tetromino.column + 1;
+
+                if (this.check_move(tetromino.matrix, tetromino.row, new_column)){
+                    tetromino.column = new_column;
+                }
+            }
+
+            if (key_name === 'ArrowUp')
+            {
+                const new_matrix = this.rotate(tetromino.matrix);
+                if (this.check_move(matrix, tetromino.row, tetromino.column))
+                {
+                    tetromino.matrix = new_matrix;
+                }
+            }
+
+            if (key_name === 'ArrowDown')
+            {
+                const new_row = tetromino.row + 1;
+                if (!this.check_move(tetromino.matrix, new_row, tetromino.column)){
+                    tetromino.row = new_row - 1;
+                    this.place_tetromino();
+                    return;
+                }
+                tetromino.row = new_row;
+            }
+        })
+    }
+}
+
+let engine = new Engine();
+// engine.keyboard_handle();
