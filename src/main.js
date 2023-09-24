@@ -1,73 +1,26 @@
 import { Field, Render } from "./render.js";
+import {FPS, colors, tetrominos} from "./const.js"; 
 
-const colors = {
-    'I': '#00ffff',
-    'O': '#faff00',
-    'T': '#9800ff',
-    'S': '#59f792',
-    'Z': '#fe3232',
-    'J': '#3266fe',
-    'L': '#fd8c00'
-};
-
-const tetrominos = {
-    'I': [
-        [0,0,0,0],
-        [1,1,1,1],
-        [0,0,0,0],
-        [0,0,0,0]
-    ],
-    'J': [
-        [1,0,0],
-        [1,1,1],
-        [0,0,0],
-    ],
-    'L': [
-        [0,0,1],
-        [1,1,1],
-        [0,0,0],
-    ],
-    'O': [
-        [1,1],
-        [1,1],
-    ],
-    'S': [
-        [0,1,1],
-        [1,1,0],
-        [0,0,0],
-    ],
-    'Z': [
-        [1,1,0],
-        [0,1,1],
-        [0,0,0],
-    ],
-    'T': [
-        [0,1,0],
-        [1,1,1],
-        [0,0,0],
-    ]
-};
-
-
-let playground_map = new Field();
-let playground_renderer = new Render("playground", playground_map);
-playground_renderer.render();
-
-let figure_preview_map = new Field(4, 4);
-let figure_preview_renderer = new Render("figure_preview", figure_preview_map);
-figure_preview_renderer.render();
-
-
-let count = 0;
-let tetromino = 0; 
-let rAF = null;
-let game_over = false;
 
 class Engine {
     constructor() {
-        this.status = 'Play';
-        this.score = 0;
+        //this.status = 'Play';
+        //this.score = 0;
+        this.frame_number = 0;
+        this.game_over = false;
+
+        this.playground_map = new Field();
+        this.playground_renderer = new Render("playground", this.playground_map);
+        this.playground_renderer.render_playground();
+
+        this.figure_preview_map = new Field(4, 4);
+        this.figure_preview_renderer = new Render("figure_preview", this.figure_preview_map);
+        this.figure_preview_renderer.render_playground();
+
         this.tetromino_sequence = [];
+        this.current_tetromino = this.get_next_tetromino(); 
+
+        this.keyboard_handle();
     }
 
     get_seed(min, max) {
@@ -77,7 +30,7 @@ class Engine {
     }
 
     generate_sequence() {
-        const sequence =  ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+        const sequence =  Object.keys(tetrominos);
 
         while (sequence.length) {
             const rand = this.get_seed(0, sequence.length - 1);
@@ -87,45 +40,42 @@ class Engine {
     }
 
     get_next_tetromino() {
-        // если следующей нет — генерируем
+        // нет последовательности тетромино? генерируем
         if (this.tetromino_sequence.length === 0) {
             this.generate_sequence();
         }
 
         const name = this.tetromino_sequence.pop();
-
-        const matrix = tetrominos[name];
-    
-        // I и O стартуют с середины, остальные — чуть левее
-        const column = playground_map.width / 2 - Math.ceil(matrix[0].length / 2);
+        const tetromino_matrix = tetrominos[name];
+        // Определяется стартовое положение элементов
+        const column = this.playground_map.width / 2 - Math.ceil(tetromino_matrix[0].length / 2);
     
         // I начинает с 21 строки (смещение -1), а все остальные — со строки 22 (смещение -2)
         const row = name === 'I' ? -1 : -2;
     
-        // вот что возвращает функция 
         return {
-        name: name,      // название фигуры (L, O, и т.д.)
-        matrix: matrix,  // матрица с фигурой
-        row: row,        // текущая строка (фигуры стартуют за видимой областью холста)
-        column: column         // текущий столбец
+            name: name,      // название фигуры
+            matrix: tetromino_matrix,  // матрица с фигурой
+            row: row,        // текущая строка
+            column: column   // текущий столбец
         };
     }
 
     rotate(matrix) { 
         const N = matrix.length - 1;
         const result = matrix.map((row, i) => row.map((val, j) => matrix[N-j][i]));
-        return matrix;
+        return result;
     }
 
-    check_move(matrix, cellRow, cellColumn) {
+    check_move(matrix, new_row, new_column) {
         for (let row = 0; row < matrix.length; row++) {
             for (let column = 0; column < matrix[row].length; column++){
                 if (matrix[row][column] && 
                     (
-                        cellColumn + column < 0 ||
-                        cellColumn + column >= playground_map.width ||
-                        cellRow + row >= playground_map.height ||
-                        playground_map[cellRow + row][cellColumn + column].fill
+                        new_column + column < 0 ||
+                        new_column + column >= this.playground_map.width ||
+                        new_row + row >= this.playground_map.height ||
+                        this.playground_map.map[new_row + row][new_column + column].fill
                     ) )
                 {
                     return false;
@@ -135,33 +85,37 @@ class Engine {
         return true;
     }
 
-    place_tetromino(tetromino) 
+    place_tetromino() 
     {
-        for (let row = 0; row < tetromino.matrix.length; row++)
+        for (let row = 0; row < this.current_tetromino.matrix.length; row++)
         {
-            for (let column = 0; column < tetromino.matrix[row].length; column++)
+            for (let column = 0; column < this.current_tetromino.matrix[row].length; column++)
             {
-                if (tetromino.matrix[row][column]){
-                    if (tetromino.row + row < 0){
-                        // gameOver
-                        return show_game_over();
+                if (this.current_tetromino.matrix[row][column]){
+                    // край фигуры вылезает за верхний край
+                    if (this.current_tetromino.row + row < 0){
+                        // game_over
+                        this.show_game_over();
+                        return;
                     }
                     // не вышли за границы поля - записываем в массив поля новую фигуру
-                    // TODO: тут типо записываем
+                    this.playground_map.map[this.current_tetromino.row + row][this.current_tetromino.column + column].color = colors[this.current_tetromino.name];
+                    this.playground_map.map[this.current_tetromino.row + row][this.current_tetromino.column + column].fill = 1;
                 }
             }
         }
 
         //проверяем, что ряды очистились
-        for (let row = playground_map.length - 1; row >= 0; )
+        for (let row = this.playground_map.height - 1; row >= 0; )
         {
-            if (playground_map[row].every(point => !!point.fill))
+            if (this.playground_map.map[row].every(cell => cell.fill == 1))
             {
                 for (let r = row; r >= 0; r--)
                 {
-                    for (let c = 0; c < playground_map.width; c++)
+                    for (let c = 0; c < this.playground_map.width; c++)
                     {
-                        playground_map[r][c] = playground_map[r-1][c];
+                        this.playground_map.map[r][c].fill = this.playground_map.map[r-1][c].fill;
+                        this.playground_map.map[r][c].color = this.playground_map.map[r-1][c].color;
                     }
                 }
             }
@@ -170,27 +124,20 @@ class Engine {
                 row--;
             }
         }
+
+        this.current_tetromino = this.get_next_tetromino();
     }
 
     show_game_over() {
-        cancelAnimationFrame(rAF);
-        game_over = true;
-          // рисуем чёрный прямоугольник посередине поля
-        context.fillStyle = 'black';
-        context.globalAlpha = 0.75;
-        context.fillRect(0, canvas.height / 2 - 30, canvas.width, 60);
-        // пишем надпись белым моноширинным шрифтом по центру
-        context.globalAlpha = 1;
-        context.fillStyle = 'white';
-        context.font = '36px monospace';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+        this.game_over = true;
+        console.log("game over");
+        this.playground_renderer.render_game_over();
     }
 
-    keyboard_handle(tetromino) {
-        document.addEventListener('keydown', function(event) {
-            if (game_over)
+    keyboard_handle() {
+        document.addEventListener('keydown', (event) => {
+            console.log("push the key");
+            if (this.game_over)
             {
                 return;
             }
@@ -198,35 +145,62 @@ class Engine {
             const key_name = event.key;
             if (key_name === 'ArrowLeft' || key_name == 'ArrowRight')
             {
-                const new_column = key_name == 'ArrowLeft' ? tetromino.column - 1 : tetromino.column + 1;
+                const new_column = key_name == 'ArrowLeft' ?  (this.current_tetromino.column) - 1 :  this.current_tetromino.column + 1;
 
-                if (this.check_move(tetromino.matrix, tetromino.row, new_column)){
-                    tetromino.column = new_column;
+                if (this.check_move( this.current_tetromino.matrix,  this.current_tetromino.row, new_column)){
+                    this.current_tetromino.column = new_column;
                 }
             }
 
             if (key_name === 'ArrowUp')
             {
-                const new_matrix = this.rotate(tetromino.matrix);
-                if (this.check_move(matrix, tetromino.row, tetromino.column))
+                const new_matrix = this.rotate(this.current_tetromino.matrix);
+                if (this.check_move(new_matrix, this.current_tetromino.row, this.current_tetromino.column))
                 {
-                    tetromino.matrix = new_matrix;
+                    this.current_tetromino.matrix = new_matrix;
                 }
             }
 
             if (key_name === 'ArrowDown')
             {
-                const new_row = tetromino.row + 1;
-                if (!this.check_move(tetromino.matrix, new_row, tetromino.column)){
-                    tetromino.row = new_row - 1;
+                const new_row = this.current_tetromino.row + 1;
+                if (!this.check_move( this.current_tetromino.matrix, new_row, this.current_tetromino.column)){
+                    this.current_tetromino.row = new_row - 1;
                     this.place_tetromino();
                     return;
                 }
-                tetromino.row = new_row;
+                this.current_tetromino.row = new_row;
             }
         })
     }
+
+    start() {
+        if (!this.game_over)
+        {
+            requestAnimationFrame(this.start.bind(this));
+        }
+
+        this.playground_renderer.render_playground();
+
+        if (this.current_tetromino){
+            if (++(this.frame_number) > FPS)
+            {
+                this.current_tetromino.row++;
+                this.frame_number = 0;
+
+                if (!this.check_move(this.current_tetromino.matrix, this.current_tetromino.row, this.current_tetromino.column))
+                {
+                    this.current_tetromino.row--;
+                    this.place_tetromino();
+                }
+            }
+
+        const color = colors[this.current_tetromino.name];
+        this.playground_renderer.render_tetromino(color, this.current_tetromino);
+        }
+    }
 }
 
+
 let engine = new Engine();
-// engine.keyboard_handle();
+engine.start();

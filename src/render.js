@@ -1,7 +1,4 @@
-
-const WIDTH = 10;
-const HEIGHT = 20;
-const CELL_SIZE = 20; // размер клетки в px
+import { WIDTH, HEIGHT, CELL_SIZE } from "./const.js";
 
 
 class Point {
@@ -29,13 +26,14 @@ export class Render {
         this.canvas_elem.style.height = `${this.canvas_elem.height}px`;
     }
 
-    render() {
-        if (this.canvas_elem.getContext){
+    render_playground() {
+        if (this.canvas_elem.getContext)
+        {
             let context = this.canvas_elem.getContext('2d');
             //чистим то, что было нарисовано
             context.clearRect(0, 0, this.canvas_width, this.canvas_height);
 
-            //рисуем
+            //рисуем поле
             for (const row of this.rendered_obj.map){
                 for (const point of row){
                     context.beginPath();
@@ -55,6 +53,57 @@ export class Render {
             }
         }
     }
+    
+    render_tetromino(color, tetromino)
+    {
+        if (this.canvas_elem.getContext)
+        {
+            let context = this.canvas_elem.getContext('2d');
+            context.fillStyle = color;
+
+            for (let row = 0; row < tetromino.matrix.length; row++)
+            {
+                for (let column = 0; column < tetromino.matrix[row].length; column++)
+                {
+                    if (tetromino.matrix[row][column])
+                    {
+                        context.beginPath();
+                        
+                        let x = (tetromino.column + column) * this.cell_size;
+                        let y = (tetromino.row + row) * this.cell_size;
+                        if (y >= 0){
+                        context.fillRect(x, y, this.cell_size, this.cell_size);
+
+                        context.closePath();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    render_game_over()
+    {
+        if (this.canvas_elem.getContext)
+        {
+            let context = this.canvas_elem.getContext('2d');
+
+            context.beginPath();
+            // рисуем чёрный прямоугольник посередине поля
+            context.fillStyle = 'black';
+            context.globalAlpha = 0.75;
+            context.fillRect(0, this.canvas_height / 2 - 30, this.canvas_width, 60);
+            // пишем надпись белым моноширинным шрифтом по центру
+            context.globalAlpha = 1;
+            context.fillStyle = 'white';
+            context.font = '36px monospace';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText('GAME OVER!', this.canvas_width / 2, this.canvas_height / 2);
+
+            context.closePath();
+        }
+    }
 }
 
 
@@ -65,17 +114,18 @@ export class Field {
     constructor(width = WIDTH, height = HEIGHT) {
         this.width = width;
         this.height = height;
-        this.map = this.#create_map();
+        this.map = []
+        this.#create_map();
     }
 
     #create_map(){
         let map = []
-        for (var i = 0; i < this.height; i++){
-            map[i] = []
-            for (var j = 0; j < this.width; j++){
-                map[i][j] = new Point(j,i);
+        for (var row = -2; row < this.height; row++){
+            map[row] = []
+            for (var column = 0; column < this.width; column++){
+                map[row][column] = new Point(column,row);
             }
         }
-        return map;
+        this.map = map;
     }
 }
