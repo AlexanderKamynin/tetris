@@ -4,8 +4,11 @@ import {FPS, colors, tetrominos} from "./const.js";
 
 class Engine {
     constructor() {
-        //this.status = 'Play';
-        //this.score = 0;
+        this.score = 0;
+        this.score_elem = document.getElementById("score")
+        this.level = 1;
+        this.level_elem = document.getElementById("level")
+
         this.frame_number = 0;
         this.game_over = false;
 
@@ -40,25 +43,49 @@ class Engine {
     }
 
     get_next_tetromino() {
-        // нет последовательности тетромино? генерируем
+        // нет последовательности тетромино или тетромино осталось последнее? генерируем
         if (this.tetromino_sequence.length === 0) {
             this.generate_sequence();
         }
 
+        // текущее тетромино
         const name = this.tetromino_sequence.pop();
+
+        if (this.tetromino_sequence.length === 0){
+            this.generate_sequence();
+        }
+
+        // будущее тетромино
+        const preview_name = this.tetromino_sequence.at(-1);
+        const preview_matrix = tetrominos[preview_name];
+        this.preview_tetromino(preview_name, preview_matrix);
+
         const tetromino_matrix = tetrominos[name];
         // Определяется стартовое положение элементов
         const column = this.playground_map.width / 2 - Math.ceil(tetromino_matrix[0].length / 2);
     
         // I начинает с 21 строки (смещение -1), а все остальные — со строки 22 (смещение -2)
         const row = name === 'I' ? -1 : -2;
-    
+
         return {
             name: name,      // название фигуры
             matrix: tetromino_matrix,  // матрица с фигурой
             row: row,        // текущая строка
             column: column   // текущий столбец
         };
+    }
+
+    preview_tetromino(name, matrix) {
+        // чистим предыдущее тетромино на preview элементе
+        this.figure_preview_renderer.render_playground();
+
+        const color = colors[name];
+        this.figure_preview_renderer.render_tetromino(color, {
+            name: name,
+            matrix: matrix,
+            row: 0,
+            column: 0
+        })
     }
 
     rotate(matrix) { 
@@ -98,6 +125,7 @@ class Engine {
                         this.show_game_over();
                         return;
                     }
+
                     // не вышли за границы поля - записываем в массив поля новую фигуру
                     this.playground_map.map[this.current_tetromino.row + row][this.current_tetromino.column + column].color = colors[this.current_tetromino.name];
                     this.playground_map.map[this.current_tetromino.row + row][this.current_tetromino.column + column].fill = 1;
@@ -105,11 +133,16 @@ class Engine {
             }
         }
 
+        this.score += 100;
+
         //проверяем, что ряды очистились
         for (let row = this.playground_map.height - 1; row >= 0; )
         {
             if (this.playground_map.map[row].every(cell => cell.fill == 1))
             {
+                this.level += 1;
+                this.score += 1000;
+
                 for (let r = row; r >= 0; r--)
                 {
                     for (let c = 0; c < this.playground_map.width; c++)
@@ -124,6 +157,9 @@ class Engine {
                 row--;
             }
         }
+
+        this.score_elem.textContent = new Intl.NumberFormat("ru-RU").format(this.score)
+        this.level_elem.textContent = this.level
 
         this.current_tetromino = this.get_next_tetromino();
     }
@@ -174,30 +210,40 @@ class Engine {
         })
     }
 
-    start() {
+    start() 
+    {
         if (!this.game_over)
         {
             requestAnimationFrame(this.start.bind(this));
-        }
+            
+            this.playground_renderer.render_playground();
 
-        this.playground_renderer.render_playground();
-
-        if (this.current_tetromino){
-            if (++(this.frame_number) > FPS)
+            if (this.current_tetromino)
             {
-                this.current_tetromino.row++;
-                this.frame_number = 0;
 
-                if (!this.check_move(this.current_tetromino.matrix, this.current_tetromino.row, this.current_tetromino.column))
-                {
-                    this.current_tetromino.row--;
-                    this.place_tetromino();
+                let speed = FPS - 5 * this.level;
+                // for high level
+                if (speed < 10){
+                    speed = 10
                 }
-            }
 
-        const color = colors[this.current_tetromino.name];
-        this.playground_renderer.render_tetromino(color, this.current_tetromino);
+                if (++(this.frame_number) > speed)
+                {
+                    this.current_tetromino.row++;
+                    this.frame_number = 0;
+
+                    if (!this.check_move(this.current_tetromino.matrix, this.current_tetromino.row, this.current_tetromino.column))
+                    {
+                        this.current_tetromino.row--;
+                        this.place_tetromino();
+                    }
+                }
+
+            const color = colors[this.current_tetromino.name];
+            this.playground_renderer.render_tetromino(color, this.current_tetromino);
+            }
         }
+        return;
     }
 }
 
