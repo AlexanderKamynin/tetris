@@ -4,6 +4,7 @@ export const HEIGHT = 20;
 export const CELL_SIZE = 20; // размер клетки в px
 
 export const FPS = 60;
+export const RECORDS_HTML = './record.html'
 
 export const colors = {
     'I': '#00ffff',

@@ -1,5 +1,5 @@
 import { Field, Render } from "./render.js";
-import {FPS, colors, tetrominos} from "./const.js"; 
+import {FPS, colors, tetrominos, RECORDS_HTML} from "./const.js"; 
 import {GameStorage} from "./storage.js"
 
 
@@ -171,7 +171,7 @@ class Engine {
         this.game_over = true;
         console.log("game over");
         this.game_storage.set_item(this.score);
-        window.location.href = './records.html';
+        window.location.href = RECORDS_HTML;
         //this.playground_renderer.render_game_over();
     }
 
