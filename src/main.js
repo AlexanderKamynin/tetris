@@ -1,9 +1,12 @@
 import { Field, Render } from "./render.js";
 import {FPS, colors, tetrominos} from "./const.js"; 
+import {GameStorage} from "./storage.js"
 
 
 class Engine {
     constructor() {
+        this.game_storage = new GameStorage();
+
         this.score = 0;
         this.score_elem = document.getElementById("score")
         this.level = 1;
@@ -167,7 +170,9 @@ class Engine {
     show_game_over() {
         this.game_over = true;
         console.log("game over");
-        this.playground_renderer.render_game_over();
+        this.game_storage.set_item(this.score);
+        window.location.href = './records.html';
+        //this.playground_renderer.render_game_over();
     }
 
     keyboard_handle() {
@@ -243,6 +248,7 @@ class Engine {
             this.playground_renderer.render_tetromino(color, this.current_tetromino);
             }
         }
+        
         return;
     }
 }

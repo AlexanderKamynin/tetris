@@ -7,17 +7,9 @@
 		<title>Tetris</title>
 	</head>
   <body>
-    <!--<form action="index.html" method="get">
-      <label>
-        Введите имя:<br>
-        <input placeholder="Введите сюда имя"><br>
-      </label>
-      <input type="submit" value="input">
-    </form>-->
-    
     <div id="main">
       <div id="information">
-          <p>Игрок:</p>
+          <p>Игрок: <span id="player_name"></span></p>
           <p>Счет: <span id="score">0</span></p>
           <p>Уровень: <span id="level">0</span></p>
 
@@ -40,6 +32,9 @@
 
     </div>
 
+    <script>
+        document.getElementById("player_name").textContent = localStorage.getItem("username")
+    </script>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>
