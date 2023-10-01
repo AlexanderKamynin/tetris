@@ -1,3 +1,6 @@
+import {RECORDS_SIZE} from "./const.js"
+
+
 export class GameStorage
 {
     constructor()
@@ -29,6 +32,10 @@ export class GameStorage
             }    
         );
         
+        while (records_table.length > RECORDS_SIZE){
+            records_table.pop();
+        }
+
         this.storage.setItem("records_table", JSON.stringify(records_table));
     }
 

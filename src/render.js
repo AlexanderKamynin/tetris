@@ -1,7 +1,7 @@
 import { WIDTH, HEIGHT, CELL_SIZE } from "./const.js";
 
 
-class Point {
+class Cell {
     constructor(x, y, fill=0, color="#5476f3"){
         this.x = x;
         this.y = y;
@@ -123,7 +123,7 @@ export class Field {
         for (var row = -2; row < this.height; row++){
             map[row] = []
             for (var column = 0; column < this.width; column++){
-                map[row][column] = new Point(column,row);
+                map[row][column] = new Cell(column,row);
             }
         }
         this.map = map;

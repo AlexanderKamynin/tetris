@@ -3,8 +3,9 @@ export const WIDTH = 10;
 export const HEIGHT = 20;
 export const CELL_SIZE = 20; // размер клетки в px
 
-export const FPS = 60;
-export const RECORDS_HTML = './record.html'
+export const FPS = 600000;
+export const RECORDS_HTML = './record.html';
+export const RECORDS_SIZE = 10;
 
 export const colors = {
     'I': '#00ffff',

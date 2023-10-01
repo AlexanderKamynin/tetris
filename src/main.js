@@ -12,7 +12,8 @@ class Engine {
         this.level = 1;
         this.level_elem = document.getElementById("level")
 
-        this.frame_number = 0;
+        //this.frame_number = 0;
+        this.last_time_drop = performance.now();
         this.game_over = false;
 
         this.playground_map = new Field();
@@ -177,7 +178,7 @@ class Engine {
 
     keyboard_handle() {
         document.addEventListener('keydown', (event) => {
-            console.log("push the key");
+            //console.log("push the key");
             if (this.game_over)
             {
                 return;
@@ -220,28 +221,32 @@ class Engine {
         if (!this.game_over)
         {
             requestAnimationFrame(this.start.bind(this));
-            
+
             this.playground_renderer.render_playground();
 
             if (this.current_tetromino)
             {
 
-                let speed = FPS - 5 * this.level;
+                let speed = FPS / (500 + this.level * 10);
                 // for high level
-                if (speed < 10){
-                    speed = 10
+                if (speed < 250){
+                    speed = 250;
                 }
+                const delta_time = performance.now() - this.last_time_drop;
 
-                if (++(this.frame_number) > speed)
+                if (delta_time > speed)
                 {
+                    //console.log(speed);
                     this.current_tetromino.row++;
-                    this.frame_number = 0;
+                    
 
                     if (!this.check_move(this.current_tetromino.matrix, this.current_tetromino.row, this.current_tetromino.column))
                     {
                         this.current_tetromino.row--;
                         this.place_tetromino();
                     }
+
+                    this.last_time_drop = performance.now();
                 }
 
             const color = colors[this.current_tetromino.name];
