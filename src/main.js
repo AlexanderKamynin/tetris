@@ -179,6 +179,9 @@ class Engine {
     keyboard_handle() {
         document.addEventListener('keydown', (event) => {
             //console.log("push the key");
+            
+            if (event.key === "H") alert("Закрой жабу, кринж.")
+
             if (this.game_over)
             {
                 return;
