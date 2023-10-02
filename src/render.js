@@ -2,7 +2,7 @@ import { WIDTH, HEIGHT, CELL_SIZE } from "./const.js";
 
 
 class Cell {
-    constructor(x, y, fill=0, color="#5476f3"){
+    constructor(x, y, fill=0, color="#29282E"){
         this.x = x;
         this.y = y;
         this.color = color;

@@ -7,24 +7,31 @@
 		<title>Tetris-records</title>
 	</head>
 <body>
+
     <div id="main">
+        <img id="monkey_smile" src="./src/img/monkey_smile.jpg" alt=""> 
 
-        <form id="restart_form" action="./play.html">
-            <button id="restart" type="submit">Restart</button>
-        </form>
+        <div id="content">
+            <form id="restart_form" action="./play.html">
+                <button id="button" type="submit">Restart</button>
+            </form>
 
-        <form id="new_game" action="./index.html">
-            <button id="new_game" type="submit">New game</button>
-        </form>
+            <form id="new_game" action="./index.html">
+                <button id="button" type="submit">New game</button>
+            </form>
 
-        <div id="records_table"></div>
+            <div id="records_table"></div>
+        </div>
+
+        <img id="skeleton" src="./src/img/skeleton.gif" alt="">
+    </div>
 
     </div>
 
     <script>
         const table = JSON.parse(localStorage.getItem("records_table"));
         document.getElementById("records_table").innerHTML = `<ul> 
-            ${table.map((record) => `<li>${record[0]} : ${record[1]} очков</li>`).join("")}
+            ${table.map((record) => `<li id="record_list">${record[0]} : ${record[1]} очков</li>`).join("")}
         </ul>`;
     </script>
     </div>

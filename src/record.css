@@ -1,4 +1,127 @@
 * {
     padding: 0;
-    margin: 0;
+    margin: 0px;
+}
+
+#main {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: stretch;
+}
+
+#content {
+    margin-left: 10px;
+    margin-right: 10px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#monkey_smile {
+    width: 256px;
+    height: 256px;
+}
+
+#button {
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#new_game {
+    padding: 10px;
+}
+
+#skeleton {
+    width: 256px;
+    height: 256px;
+}
+
+#record_list {
+    position: relative;
+    display: block;
+    padding: 10px 50px 10px 50px;
+    margin: .5em 0;
+    background: #ddd;
+    text-decoration: none;
+    transition: all .3s ease-out;	
+}
+
+#record_list a:hover {
+    background: #eee;
+}	
+
+#record_list a:before {
+    content: counter(li);
+    counter-increment: li;
+    position: absolute;	
+    left: -2.5em;
+    top: 50%;
+    margin-top: -1em;
+    height: 2em;
+    width: 2em;
+    line-height: 2em;
+    text-align: center;
+    font-weight: bold;
+}
+
+#record_list a:after {
+    position: absolute;	
+    content: '';
+    border: .5em solid transparent;
+    left: -1em;
+    top: 50%;
+    margin-top: -.5em;
+    -webkit-transition: all .3s ease-out;
+    -moz-transition: all .3s ease-out;
+    -ms-transition: all .3s ease-out;
+    -o-transition: all .3s ease-out;
+    transition: all .3s ease-out;				
+}
+
+#record_list a:hover:after {
+    left: -.5em;
+    border-left-color: #fa8072;				
+}
+
+#button {
+    align-self: center;
+    background-color: #fff;
+    background-image: none;
+    background-position: 0 90%;
+    background-repeat: repeat no-repeat;
+    background-size: 4px 3px;
+    border-radius: 15px 225px 255px 15px 15px 255px 225px 15px;
+    border-style: solid;
+    border-width: 2px;
+    box-shadow: rgba(0, 0, 0, .2) 15px 28px 25px -18px;
+    box-sizing: border-box;
+    color: #41403e;
+    cursor: pointer;
+    display: inline-block;
+    font-family: Neucha, sans-serif;
+    font-size: 1rem;
+    line-height: 23px;
+    outline: none;
+    padding: .75rem;
+    text-decoration: none;
+    transition: all 235ms ease-in-out;
+    border-bottom-left-radius: 15px 255px;
+    border-bottom-right-radius: 225px 15px;
+    border-top-left-radius: 255px 15px;
+    border-top-right-radius: 15px 225px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+#button:hover {
+    box-shadow: rgba(0, 0, 0, .3) 2px 8px 8px -5px;
+    transform: translate3d(0, 2px, 0);
+}
+
+#button:focus {
+    box-shadow: rgba(0, 0, 0, .3) 2px 8px 4px -6px;
 }
